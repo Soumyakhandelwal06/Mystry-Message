@@ -17,53 +17,113 @@ const messageLimiter = rateLimit({
 // @route   POST /api/messages/send/:uniqueId
 // @desc    Send anonymous message
 // @access  Public
-router.post(
-  "/send/:uniqueId",
-  messageLimiter,
-  messageValidation,
-  async (req, res) => {
-    try {
-      const { uniqueId } = req.params;
-      const { content } = req.body;
+// router.post(
+//   "/send/:uniqueId",
+//   messageLimiter,
+//   messageValidation,
+//   async (req, res) => {
+//     try {
+//       const { uniqueId } = req.params;
+//       const { content } = req.body;
 
-      // Find recipient by unique ID
-      const recipient = await User.findOne({ uniqueId });
+//       // Find recipient by unique ID
+//       const recipient = await User.findOne({ uniqueId });
 
-      if (!recipient) {
-        return res.status(404).json({ message: "Recipient not found" });
-      }
+//       if (!recipient) {
+//         return res.status(404).json({ message: "Recipient not found" });
+//       }
 
-      if (!recipient.isVerified) {
-        return res
-          .status(400)
-          .json({ message: "Recipient account not verified" });
-      }
+//       if (!recipient.isVerified) {
+//         return res
+//           .status(400)
+//           .json({ message: "Recipient account not verified" });
+//       }
+//       if (!recipient.isAcceptingMessages) {
+//         return res
+//           .status(403)
+//           .json({
+//             message: "This user is not accepting messages at the moment.",
+//           });
+//       }
 
-      // Get sender's IP address
-      const senderIP = req.ip || req.connection.remoteAddress;
+//       // Get sender's IP address
+//       const senderIP = req.ip || req.connection.remoteAddress;
 
-      // Create message
-      const message = new Message({
-        recipientId: recipient._id,
-        recipientUniqueId: uniqueId,
-        content: content.trim(),
-        senderIP,
-      });
+//       // Create message
+//       const message = new Message({
+//         recipientId: recipient._id,
+//         recipientUniqueId: uniqueId,
+//         content: content.trim(),
+//         senderIP,
+//       });
 
-      await message.save();
-      console.log("✅ Message saved to DB:", message); // <== Add this line
-      res.status(201).json({
-        success: true, // ✅ add this
-        message: "Message sent successfully",
-        timestamp: message.createdAt,
-      });
-    } catch (error) {
-      console.error("Send message error:", error);
-      res.status(500).json({ message: "Server error while sending message" });
+//       await message.save();
+//       console.log("✅ Message saved to DB:", message); // <== Add this line
+//       res.status(201).json({
+//         success: true, // ✅ add this
+//         message: "Message sent successfully",
+//         timestamp: message.createdAt,
+//       });
+//     } catch (error) {
+//       console.error("Send message error:", error);
+//       res.status(500).json({ message: "Server error while sending message" });
+//     }
+//   }
+// );
+router.post("/send/:uniqueId", async (req, res) => {
+  try {
+    const { uniqueId } = req.params;
+    const { content } = req.body;
+
+    if (!content || content.trim() === "") {
+      return res.status(400).json({ message: "Message content is required." });
     }
-  }
-);
 
+    const user = await User.findOne({ uniqueId, isVerified: true });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    console.log("User accepting messages?", user.isAcceptingMessages);
+
+    // ✅ Check if user is not accepting messages
+    if (user.isAcceptingMessages !== true) {
+      return res.status(403).json({
+        message: "This user is not accepting messages at the moment.",
+      });
+    }
+
+    // ✅ Save message
+    const senderIP =
+      req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
+
+    const newMessage = new Message({
+      content: content.trim(),
+      senderIP,
+      recipientId: user._id,
+      recipientUniqueId: uniqueId,
+    });
+    console.log("🔍 Creating message with:", {
+      content,
+      senderIP,
+      recipientId: user._id,
+      recipientUniqueId: uniqueId,
+    });
+    await newMessage.save();
+
+    console.log("✅ Message saved to DB:", newMessage);
+    res.status(201).json({
+      message: "Message sent successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Send message error:", error);
+    res.status(500).json({
+      message: "Server error while sending message",
+    });
+  }
+});
 // @route   GET /api/messages
 // @desc    Get all messages for authenticated user
 // @access  Private
@@ -159,6 +219,8 @@ router.delete("/:messageId", auth, async (req, res) => {
     res.status(500).json({ message: "Server error while deleting message" });
   }
 });
+// @route   POST /api/messages/:messageId/allow
+// @desc    Mark message
 
 // @route   GET /api/messages/stats
 // @desc    Get message statistics

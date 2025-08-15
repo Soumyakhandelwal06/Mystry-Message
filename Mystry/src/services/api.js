@@ -163,7 +163,13 @@ class ApiService {
       },
     });
   }
-
+  async getProfile(token) {
+    return this.makeRequest(`/users/profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
   async changePassword(userId, passwords, token) {
     return this.makeRequest(`/users/${userId}/change-password`, {
       method: "POST",
@@ -210,6 +216,17 @@ class ApiService {
       },
     });
   }
+  async updateAcceptingMessages(status, token) {
+    return this.makeRequest(`/users/accepting-messages`, {
+      method: "PUT",
+      body: JSON.stringify({ accepting: status }),
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  // Allow a message
 }
 
 export const api = new ApiService();

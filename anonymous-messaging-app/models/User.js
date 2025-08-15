@@ -18,6 +18,12 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    username: {
+      type: String,
+      required: false,
+      unique: true,
+      trim: true,
+    },
     password: {
       type: String,
       required: true,
@@ -31,6 +37,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
       required: true,
+    },
+    isAcceptingMessages: {
+      type: Boolean,
+      default: true,
     },
     uniqueId: {
       type: String,
@@ -60,6 +70,17 @@ const userSchema = new mongoose.Schema(
 );
 
 // Generate unique ID and link before saving
+// userSchema.pre("save", async function (next) {
+//   if (!this.isNew) return next();
+
+//   // Generate unique ID
+//   this.uniqueId = crypto.randomBytes(8).toString("hex");
+
+//   // Generate unique link
+//   this.uniqueLink = `${process.env.FRONTEND_URL}/send/${this.uniqueId}`;
+
+//   next();
+// });
 userSchema.pre("save", async function (next) {
   if (!this.isNew) return next();
 
@@ -68,6 +89,13 @@ userSchema.pre("save", async function (next) {
 
   // Generate unique link
   this.uniqueLink = `${process.env.FRONTEND_URL}/send/${this.uniqueId}`;
+
+  // Auto-generate username if missing
+  if (!this.username && this.email) {
+    const base = this.email.split("@")[0];
+    const suffix = Math.floor(100 + Math.random() * 900); // 3-digit random number
+    this.username = `${base}${suffix}`;
+  }
 
   next();
 });

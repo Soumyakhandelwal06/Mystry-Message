@@ -82,6 +82,7 @@ router.get("/profile", auth, async (req, res) => {
         uniqueLink: user.uniqueLink,
         uniqueId: user.uniqueId,
         isVerified: user.isVerified,
+        isAcceptingMessages: user.isAcceptingMessages,
         createdAt: user.createdAt,
       },
     });
@@ -140,6 +141,38 @@ router.get("/:uniqueId", async (req, res) => {
   } catch (err) {
     console.error("Get user profile error:", err);
     return res.status(500).json({ message: "Server error", success: false });
+  }
+});
+// @route   PUT /api/users/accepting-messages
+// @desc    Toggle accepting messages
+// @access  Private
+router.put("/accepting-messages", auth, async (req, res) => {
+  try {
+    const { accepting } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { isAcceptingMessages: accepting },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.isAcceptingMessages = accepting;
+    await user.save({ validateBeforeSave: false });
+    console.log(
+      "✅ Updated user.isAcceptingMessages:",
+      user.isAcceptingMessages
+    );
+    res.json({
+      success: true,
+      message: `Messages ${accepting ? "enabled" : "disabled"}`,
+      isAcceptingMessages: user.isAcceptingMessages,
+    });
+  } catch (error) {
+    console.error("Error toggling accepting messages:", error);
+    res.status(500).json({ message: "Server error while updating setting" });
   }
 });
 
