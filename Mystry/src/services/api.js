@@ -1,6 +1,6 @@
 // src/services/api.js (Enhanced version)
 const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:5001/api";
+  process.env.REACT_APP_API_URL || "http://localhost:5002/api";
 
 class ApiService {
   constructor() {
