@@ -22,9 +22,6 @@ export const SendMessage = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [aiSuggestions, setAiSuggestions] = useState([]);
-  const [input, setInput] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -110,30 +107,30 @@ export const SendMessage = () => {
 
     return () => clearTimeout(debounceTimer);
   }, [input]);
-  const regenerateSuggestions = async () => {
-    if (input.trim() === "") return;
+  // const regenerateSuggestions = async () => {
+  //   if (input.trim() === "") return;
 
-    setLoadingSuggestions(true);
-    try {
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/ai/suggestions`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ input }),
-        }
-      );
+  //   setLoadingSuggestions(true);
+  //   try {
+  //     const res = await fetch(
+  //       `${process.env.REACT_APP_API_URL}/ai/suggestions`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({ input }),
+  //       }
+  //     );
 
-      const data = await res.json();
-      setSuggestions(data.suggestions || []);
-    } catch (error) {
-      console.error("Failed to regenerate suggestions", error);
-    } finally {
-      setLoadingSuggestions(false);
-    }
-  };
+  //     const data = await res.json();
+  //     setSuggestions(data.suggestions || []);
+  //   } catch (error) {
+  //     console.error("Failed to regenerate suggestions", error);
+  //   } finally {
+  //     setLoadingSuggestions(false);
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
